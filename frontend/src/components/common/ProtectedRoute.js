@@ -4,8 +4,12 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ProtectedRoute({ children }) {
-  const { user, initialized } = useAuth();
+  const { user, initialized, fetchMe } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!user) fetchMe();
+  }, []);
 
   useEffect(() => {
     if (initialized && !user) router.replace('/login');

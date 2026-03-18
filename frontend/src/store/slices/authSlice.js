@@ -8,31 +8,56 @@ const GUEST_USER = {
   isGuest: true,
 };
 
+const saveUser = (user) => {
+  try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+};
+
+const loadUser = () => {
+  try {
+    const u = localStorage.getItem('auth_user');
+    return u ? JSON.parse(u) : null;
+  } catch { return null; }
+};
+
+const clearUser = () => {
+  try { localStorage.removeItem('auth_user'); } catch {}
+};
+
 export const loginUser = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
   if (data.email === 'guest@taskflow.demo') {
-    if (typeof window !== 'undefined') localStorage.setItem('isGuest', 'true');
+    saveUser(GUEST_USER);
     return GUEST_USER;
   }
-  if (typeof window !== 'undefined') localStorage.removeItem('isGuest');
-  try { const res = await authService.login(data); return res.data.user; }
-  catch (e) { return rejectWithValue(e.response?.data?.message || 'Login failed'); }
+  try {
+    const res = await authService.login(data);
+    saveUser(res.data.user);
+    return res.data.user;
+  } catch (e) { return rejectWithValue(e.response?.data?.message || 'Login failed'); }
 });
 
 export const registerUser = createAsyncThunk('auth/register', async (data, { rejectWithValue }) => {
-  try { const res = await authService.register(data); return res.data.user; }
-  catch (e) { return rejectWithValue(e.response?.data?.message || 'Registration failed'); }
+  try {
+    const res = await authService.register(data);
+    saveUser(res.data.user);
+    return res.data.user;
+  } catch (e) { return rejectWithValue(e.response?.data?.message || 'Registration failed'); }
 });
 
 export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
-  if (typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true') {
-    return GUEST_USER;
+  // ✅ Check localStorage first
+  const saved = loadUser();
+  if (saved?.isGuest) return saved;
+  if (saved) {
+    // Verify with API
+    try { const res = await authService.getMe(); return res.data.user; }
+    catch { clearUser(); return rejectWithValue(null); }
   }
   try { const res = await authService.getMe(); return res.data.user; }
   catch { return rejectWithValue(null); }
 });
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
-  if (typeof window !== 'undefined') localStorage.removeItem('isGuest');
+  clearUser();
   const { auth } = getState();
   if (auth.user?.isGuest) return;
   await authService.logout();
@@ -40,23 +65,21 @@ export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { user: null, loading: false, error: null, initialized: false },
+  initialState: {
+    // ✅ Load from localStorage on startup
+    user: typeof window !== 'undefined' ? loadUser() : null,
+    loading: false,
+    error: null,
+    initialized: typeof window !== 'undefined' && loadUser() ? true : false,
+  },
   reducers: { clearError: (s) => { s.error = null; } },
   extraReducers: (b) => {
     b
       .addCase(loginUser.pending, (s) => { s.loading = true; s.error = null; })
-      .addCase(loginUser.fulfilled, (s, a) => {
-        s.loading = false;
-        s.user = a.payload;
-        s.initialized = true; // ✅ mark initialized immediately on login
-      })
+      .addCase(loginUser.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; s.initialized = true; })
       .addCase(loginUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
       .addCase(registerUser.pending, (s) => { s.loading = true; s.error = null; })
-      .addCase(registerUser.fulfilled, (s, a) => {
-        s.loading = false;
-        s.user = a.payload;
-        s.initialized = true;
-      })
+      .addCase(registerUser.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; s.initialized = true; })
       .addCase(registerUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
       .addCase(fetchMe.fulfilled, (s, a) => { s.user = a.payload; s.initialized = true; })
       .addCase(fetchMe.rejected, (s) => { s.user = null; s.initialized = true; })

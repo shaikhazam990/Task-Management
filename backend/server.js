@@ -21,14 +21,20 @@ app.use(helmet());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { success: false, message: "Too many requests, please try again later." },
+  message: {
+    success: false,
+    message: "Too many requests, please try again later.",
+  },
 });
 app.use("/api", limiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { success: false, message: "Too many login attempts, please try again later." },
+  message: {
+    success: false,
+    message: "Too many login attempts, please try again later.",
+  },
 });
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
@@ -41,6 +47,7 @@ app.use(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://task-management-pied-ten.vercel.app",
+        "https://task-management-git-main-mrsimens72-6377s-projects.vercel.app",
         process.env.CLIENT_URL,
       ].filter(Boolean);
 
@@ -51,7 +58,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json({ limit: "10kb" }));
@@ -67,7 +74,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "Server is running", env: process.env.NODE_ENV });
+  res.json({
+    success: true,
+    message: "Server is running",
+    env: process.env.NODE_ENV,
+  });
 });
 
 app.use("*", (req, res) => {

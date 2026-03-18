@@ -9,10 +9,12 @@ const GUEST_USER = {
 };
 
 export const loginUser = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
-  // ✅ Handle guest locally — no API call
   if (data.email === 'guest@taskflow.demo') {
+    // ✅ Save guest flag so refresh works
+    localStorage.setItem('isGuest', 'true');
     return GUEST_USER;
   }
+  localStorage.removeItem('isGuest');
   try { const res = await authService.login(data); return res.data.user; }
   catch (e) { return rejectWithValue(e.response?.data?.message || 'Login failed'); }
 });
@@ -22,17 +24,18 @@ export const registerUser = createAsyncThunk('auth/register', async (data, { rej
   catch (e) { return rejectWithValue(e.response?.data?.message || 'Registration failed'); }
 });
 
-export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue, getState }) => {
-  // ✅ If guest, don't hit API — just return guest user
-  const { auth } = getState();
-  if (auth.user?.isGuest) return auth.user;
+export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
+  // ✅ If guest session saved, restore it without API call
+  if (typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true') {
+    return GUEST_USER;
+  }
   try { const res = await authService.getMe(); return res.data.user; }
   catch { return rejectWithValue(null); }
 });
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
+  localStorage.removeItem('isGuest');
   const { auth } = getState();
-  // ✅ Skip API logout for guest
   if (auth.user?.isGuest) return;
   await authService.logout();
 });

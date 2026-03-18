@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
@@ -6,18 +6,28 @@ import { useAuth } from '../../hooks/useAuth';
 export default function ProtectedRoute({ children }) {
   const { user, initialized, fetchMe } = useAuth();
   const router = useRouter();
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // ✅ Don't call fetchMe if already a guest
-    if (typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true') return;
-    fetchMe();
+    const isGuest =
+      typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true';
+
+    if (isGuest) {
+      // ✅ Guest: restore via fetchMe (which returns GUEST_USER from localStorage)
+      fetchMe().then(() => setChecked(true));
+    } else {
+      fetchMe().then(() => setChecked(true));
+    }
   }, []);
 
   useEffect(() => {
-    if (initialized && !user) router.replace('/login');
-  }, [initialized, user]);
+    if (checked && initialized && !user) {
+      router.replace('/login');
+    }
+  }, [checked, initialized, user]);
 
-  if (!initialized && !user) {
+  // ✅ Don't redirect until we've finished checking
+  if (!checked || !initialized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-void gap-5">
         <motion.div

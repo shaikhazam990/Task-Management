@@ -10,7 +10,12 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
       const p = window.location.pathname;
-      if (p !== '/login' && p !== '/register') window.location.href = '/login';
+      // ✅ Don't redirect if guest user is saved in localStorage
+      const savedUser = localStorage.getItem('auth_user');
+      const isGuest = savedUser && JSON.parse(savedUser)?.isGuest;
+      if (!isGuest && p !== '/login' && p !== '/register') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }

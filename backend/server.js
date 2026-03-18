@@ -47,7 +47,7 @@ app.use(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://task-management-pied-ten.vercel.app",
-        "https://task-management-git-main-mrsimens72-6377s-projects.vercel.app",
+        // "https://task-management-git-main-mrsimens72-6377s-projects.vercel.app",
         process.env.CLIENT_URL,
       ].filter(Boolean);
 

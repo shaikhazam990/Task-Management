@@ -8,12 +8,21 @@ export default function ProtectedRoute({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) fetchMe();
+    const savedUser = localStorage.getItem('auth_user');
+    const parsed = savedUser ? JSON.parse(savedUser) : null;
+
+    if (parsed?.isGuest) {
+      // ✅ Guest — never call fetchMe, never hit API
+      return;
+    }
+    fetchMe();
   }, []);
 
   useEffect(() => {
     if (initialized && !user) router.replace('/login');
   }, [initialized, user]);
+
+  if (user) return children;
 
   if (!initialized) {
     return (
@@ -28,6 +37,5 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) return null;
-  return children;
+  return null;
 }

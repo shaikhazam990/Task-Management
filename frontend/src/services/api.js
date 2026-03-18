@@ -8,15 +8,7 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && typeof window !== 'undefined') {
-      const p = window.location.pathname;
-      // ✅ Don't redirect if guest user is saved in localStorage
-      const savedUser = localStorage.getItem('auth_user');
-      const isGuest = savedUser && JSON.parse(savedUser)?.isGuest;
-      if (!isGuest && p !== '/login' && p !== '/register') {
-        window.location.href = '/login';
-      }
-    }
+    // ✅ REMOVED auto redirect — let Redux handle it
     return Promise.reject(err);
   }
 );

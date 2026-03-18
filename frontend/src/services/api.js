@@ -8,7 +8,6 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // ✅ REMOVED auto redirect — let Redux handle it
     return Promise.reject(err);
   }
 );

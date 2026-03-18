@@ -1,33 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ProtectedRoute({ children }) {
-  const { user, initialized, fetchMe } = useAuth();
+  const { user, initialized } = useAuth();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const isGuest =
-      typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true';
+    if (initialized && !user) router.replace('/login');
+  }, [initialized, user]);
 
-    if (isGuest) {
-      // ✅ Guest: restore via fetchMe (which returns GUEST_USER from localStorage)
-      fetchMe().then(() => setChecked(true));
-    } else {
-      fetchMe().then(() => setChecked(true));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (checked && initialized && !user) {
-      router.replace('/login');
-    }
-  }, [checked, initialized, user]);
-
-  // ✅ Don't redirect until we've finished checking
-  if (!checked || !initialized) {
+  if (!initialized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-void gap-5">
         <motion.div

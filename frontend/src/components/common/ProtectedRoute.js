@@ -8,13 +8,11 @@ export default function ProtectedRoute({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('auth_user');
-    const parsed = savedUser ? JSON.parse(savedUser) : null;
-
-    if (parsed?.isGuest) {
-      // ✅ Guest — never call fetchMe, never hit API
-      return;
-    }
+    // ✅ Guest user — skip fetchMe entirely, never call API
+    try {
+      const saved = localStorage.getItem('auth_user');
+      if (saved && JSON.parse(saved)?.isGuest) return;
+    } catch {}
     fetchMe();
   }, []);
 
@@ -22,6 +20,7 @@ export default function ProtectedRoute({ children }) {
     if (initialized && !user) router.replace('/login');
   }, [initialized, user]);
 
+  // ✅ User exists — render immediately, no waiting
   if (user) return children;
 
   if (!initialized) {

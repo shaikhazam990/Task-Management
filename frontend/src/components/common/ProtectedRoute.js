@@ -7,12 +7,17 @@ export default function ProtectedRoute({ children }) {
   const { user, initialized, fetchMe } = useAuth();
   const router = useRouter();
 
-  useEffect(() => { fetchMe(); }, []);
+  useEffect(() => {
+    // ✅ Don't call fetchMe if already a guest
+    if (typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true') return;
+    fetchMe();
+  }, []);
+
   useEffect(() => {
     if (initialized && !user) router.replace('/login');
   }, [initialized, user]);
 
-  if (!initialized) {
+  if (!initialized && !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-void gap-5">
         <motion.div

@@ -10,11 +10,10 @@ const GUEST_USER = {
 
 export const loginUser = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
   if (data.email === 'guest@taskflow.demo') {
-    // ✅ Save guest flag so refresh works
-    localStorage.setItem('isGuest', 'true');
+    if (typeof window !== 'undefined') localStorage.setItem('isGuest', 'true');
     return GUEST_USER;
   }
-  localStorage.removeItem('isGuest');
+  if (typeof window !== 'undefined') localStorage.removeItem('isGuest');
   try { const res = await authService.login(data); return res.data.user; }
   catch (e) { return rejectWithValue(e.response?.data?.message || 'Login failed'); }
 });
@@ -25,7 +24,6 @@ export const registerUser = createAsyncThunk('auth/register', async (data, { rej
 });
 
 export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
-  // ✅ If guest session saved, restore it without API call
   if (typeof window !== 'undefined' && localStorage.getItem('isGuest') === 'true') {
     return GUEST_USER;
   }
@@ -34,7 +32,7 @@ export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }
 });
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
-  localStorage.removeItem('isGuest');
+  if (typeof window !== 'undefined') localStorage.removeItem('isGuest');
   const { auth } = getState();
   if (auth.user?.isGuest) return;
   await authService.logout();
@@ -47,13 +45,21 @@ const authSlice = createSlice({
   extraReducers: (b) => {
     b
       .addCase(loginUser.pending, (s) => { s.loading = true; s.error = null; })
-      .addCase(loginUser.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; s.initialized = true; })
+      .addCase(loginUser.fulfilled, (s, a) => {
+        s.loading = false;
+        s.user = a.payload;
+        s.initialized = true; // ✅ mark initialized immediately on login
+      })
       .addCase(loginUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
       .addCase(registerUser.pending, (s) => { s.loading = true; s.error = null; })
-      .addCase(registerUser.fulfilled, (s, a) => { s.loading = false; s.user = a.payload; s.initialized = true; })
+      .addCase(registerUser.fulfilled, (s, a) => {
+        s.loading = false;
+        s.user = a.payload;
+        s.initialized = true;
+      })
       .addCase(registerUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
       .addCase(fetchMe.fulfilled, (s, a) => { s.user = a.payload; s.initialized = true; })
-      .addCase(fetchMe.rejected, (s) => { s.initialized = true; })
+      .addCase(fetchMe.rejected, (s) => { s.user = null; s.initialized = true; })
       .addCase(logoutUser.fulfilled, (s) => { s.user = null; s.initialized = true; });
   },
 });

@@ -6,9 +6,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
-const GUEST_EMAIL = 'guest@taskflow.demo';
-const GUEST_PASSWORD = 'guest123';
-
 export default function LoginPage() {
   const { login, user, loading, error, clearError } = useAuth();
   const router = useRouter();
@@ -25,25 +22,10 @@ export default function LoginPage() {
     await login(form);
   };
 
+  // ✅ FIXED: Guest login is handled locally, no API call
   const handleGuest = async () => {
     setGuestLoading(true);
-    const result = await login({ email: GUEST_EMAIL, password: GUEST_PASSWORD });
-    // If guest account doesn't exist yet, auto-register it first
-    if (result?.error) {
-      const { registerUser } = await import('../store/slices/authSlice');
-      // Try registering via API directly
-      try {
-        const api = (await import('../services/api')).default;
-        await api.post('/auth/register', {
-          name: 'Guest User',
-          email: GUEST_EMAIL,
-          password: GUEST_PASSWORD,
-        });
-        await login({ email: GUEST_EMAIL, password: GUEST_PASSWORD });
-      } catch {
-        toast.error('Guest login failed. Please try again.');
-      }
-    }
+    await login({ email: 'guest@taskflow.demo', password: '' });
     setGuestLoading(false);
   };
 
@@ -51,11 +33,9 @@ export default function LoginPage() {
     <>
       <Head><title>Sign In — TaskFlow</title></Head>
       <div className="min-h-screen bg-void flex items-center justify-center px-4 relative overflow-hidden">
-        {/* Background orbs */}
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-iris-600/8 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-iris-800/6 rounded-full blur-[80px] pointer-events-none" />
 
-        {/* Noise texture */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
 
@@ -63,7 +43,6 @@ export default function LoginPage() {
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-sm relative">
 
-          {/* Logo mark */}
           <div className="flex flex-col items-center mb-8">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -78,7 +57,6 @@ export default function LoginPage() {
             <p className="text-sm text-white/35 mt-1">Sign in to your workspace</p>
           </div>
 
-          {/* Card */}
           <div className="rounded-2xl border border-white/[0.08] p-6"
             style={{ background: 'rgba(13,13,26,0.8)', backdropFilter: 'blur(20px)' }}>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -122,14 +100,12 @@ export default function LoginPage() {
                 ) : 'Sign in'}
               </button>
 
-              {/* Divider */}
               <div className="flex items-center gap-3 my-1">
                 <div className="flex-1 h-px bg-white/[0.07]" />
                 <span className="text-xs text-white/25">or</span>
                 <div className="flex-1 h-px bg-white/[0.07]" />
               </div>
 
-              {/* Guest login */}
               <button
                 type="button"
                 onClick={handleGuest}
@@ -164,7 +140,6 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Keyboard hint */}
           <p className="text-center text-[10px] text-white/15 mt-3 font-mono">
             Press ⌘K anywhere for quick actions
           </p>

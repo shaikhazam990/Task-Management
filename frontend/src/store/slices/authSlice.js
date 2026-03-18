@@ -12,13 +12,6 @@ const saveUser = (user) => {
   try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
 };
 
-const loadUser = () => {
-  try {
-    const u = localStorage.getItem('auth_user');
-    return u ? JSON.parse(u) : null;
-  } catch { return null; }
-};
-
 const clearUser = () => {
   try { localStorage.removeItem('auth_user'); } catch {}
 };
@@ -44,16 +37,16 @@ export const registerUser = createAsyncThunk('auth/register', async (data, { rej
 });
 
 export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
-  // ✅ Check localStorage first
-  const saved = loadUser();
-  if (saved?.isGuest) return saved;
-  if (saved) {
-    // Verify with API
-    try { const res = await authService.getMe(); return res.data.user; }
-    catch { clearUser(); return rejectWithValue(null); }
-  }
-  try { const res = await authService.getMe(); return res.data.user; }
-  catch { return rejectWithValue(null); }
+  try {
+    const saved = JSON.parse(localStorage.getItem('auth_user') || 'null');
+    if (saved?.isGuest) return saved;
+    if (saved) {
+      try { const res = await authService.getMe(); return res.data.user; }
+      catch { clearUser(); return rejectWithValue(null); }
+    }
+    const res = await authService.getMe();
+    return res.data.user;
+  } catch { return rejectWithValue(null); }
 });
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
@@ -65,13 +58,7 @@ export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
-    // ✅ Load from localStorage on startup
-    user: typeof window !== 'undefined' ? loadUser() : null,
-    loading: false,
-    error: null,
-    initialized: typeof window !== 'undefined' && loadUser() ? true : false,
-  },
+  initialState: { user: null, loading: false, error: null, initialized: false },
   reducers: { clearError: (s) => { s.error = null; } },
   extraReducers: (b) => {
     b

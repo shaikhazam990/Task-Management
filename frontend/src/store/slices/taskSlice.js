@@ -6,17 +6,36 @@ export const fetchTasks = createAsyncThunk('tasks/fetch', async (params, { rejec
   catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
 
-export const addTask = createAsyncThunk('tasks/add', async (data, { rejectWithValue }) => {
+export const addTask = createAsyncThunk('tasks/add', async (data, { rejectWithValue, getState }) => {
+  // ✅ Guest — create locally
+  const { auth } = getState();
+  if (auth.user?.isGuest) {
+    const localTask = {
+      _id: 'guest_' + Date.now(),
+      ...data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return localTask;
+  }
   try { const res = await taskService.createTask(data); return res.data.task; }
   catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
 
-export const editTask = createAsyncThunk('tasks/edit', async ({ id, data }, { rejectWithValue }) => {
+export const editTask = createAsyncThunk('tasks/edit', async ({ id, data }, { rejectWithValue, getState }) => {
+  // ✅ Guest — edit locally
+  const { auth } = getState();
+  if (auth.user?.isGuest) {
+    return { _id: id, ...data, updatedAt: new Date().toISOString() };
+  }
   try { const res = await taskService.updateTask(id, data); return res.data.task; }
   catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
 
-export const removeTask = createAsyncThunk('tasks/remove', async (id, { rejectWithValue }) => {
+export const removeTask = createAsyncThunk('tasks/remove', async (id, { rejectWithValue, getState }) => {
+  // ✅ Guest — remove locally
+  const { auth } = getState();
+  if (auth.user?.isGuest) return id;
   try { await taskService.deleteTask(id); return id; }
   catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
@@ -35,7 +54,7 @@ const taskSlice = createSlice({
       .addCase(addTask.fulfilled, (s, a) => { s.tasks.unshift(a.payload); })
       .addCase(editTask.fulfilled, (s, a) => {
         const i = s.tasks.findIndex(t => t._id === a.payload._id);
-        if (i !== -1) s.tasks[i] = a.payload;
+        if (i !== -1) s.tasks[i] = { ...s.tasks[i], ...a.payload };
       })
       .addCase(removeTask.fulfilled, (s, a) => { s.tasks = s.tasks.filter(t => t._id !== a.payload); });
   },

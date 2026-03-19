@@ -30,19 +30,6 @@ export default function RegisterPage() {
     await register(form);
   };
 
-  const Field = ({ label, name, type = 'text', placeholder, autoComplete }) => (
-    <div>
-      <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">{label}</label>
-      <input type={type} className={`input ${errors[name] ? 'border-red-500/40' : ''}`}
-        placeholder={placeholder}
-        value={form[name]}
-        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-        autoComplete={autoComplete}
-      />
-      {errors[name] && <p className="text-red-400 text-xs mt-1">{errors[name]}</p>}
-    </div>
-  );
-
   return (
     <>
       <Head><title>Create Account — TaskFlow</title></Head>
@@ -70,9 +57,42 @@ export default function RegisterPage() {
           <div className="rounded-2xl border border-white/[0.08] p-6"
             style={{ background: 'rgba(13,13,26,0.8)', backdropFilter: 'blur(20px)' }}>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Full Name" name="name" placeholder="John Doe" autoComplete="name" />
-              <Field label="Email" name="email" type="email" placeholder="you@example.com" autoComplete="email" />
-              <Field label="Password" name="password" type="password" placeholder="Min 6 characters" autoComplete="new-password" />
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Full Name</label>
+                <input type="text" className={`input ${errors.name ? 'border-red-500/40' : ''}`}
+                  placeholder="John Doe"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  autoComplete="name"
+                />
+                {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Email</label>
+                <input type="email" className={`input ${errors.email ? 'border-red-500/40' : ''}`}
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  autoComplete="email"
+                />
+                {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Password</label>
+                <input type="password" className={`input ${errors.password ? 'border-red-500/40' : ''}`}
+                  placeholder="Min 6 characters"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  autoComplete="new-password"
+                />
+                {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+              </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full py-3 mt-2">
                 {loading ? (

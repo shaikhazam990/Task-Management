@@ -8,52 +8,62 @@ const GUEST_USER = {
   isGuest: true,
 };
 
-const saveUser = (user) => {
-  try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+const saveAuth = (user, token) => {
+  try {
+    localStorage.setItem('auth_user', JSON.stringify(user));
+    if (token) localStorage.setItem('auth_token', token);
+  } catch {}
 };
 
-const clearUser = () => {
-  try { localStorage.removeItem('auth_user'); } catch {}
+const clearAuth = () => {
+  try {
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token');
+  } catch {}
 };
 
 export const loginUser = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
   if (data.email === 'guest@taskflow.demo') {
-    saveUser(GUEST_USER);
+    saveAuth(GUEST_USER, null);
     return GUEST_USER;
   }
   try {
     const res = await authService.login(data);
-    saveUser(res.data.user);
-    return res.data.user;
+    const { user, token } = res.data.data;
+    saveAuth(user, token);
+    return user;
   } catch (e) { return rejectWithValue(e.response?.data?.message || 'Login failed'); }
 });
 
 export const registerUser = createAsyncThunk('auth/register', async (data, { rejectWithValue }) => {
   try {
     const res = await authService.register(data);
-    saveUser(res.data.user);
-    return res.data.user;
+    const { user, token } = res.data.data;
+    saveAuth(user, token);
+    return user;
   } catch (e) { return rejectWithValue(e.response?.data?.message || 'Registration failed'); }
 });
 
 export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
   try {
-    const saved = JSON.parse(localStorage.getItem('auth_user') || 'null');
-    if (saved?.isGuest) return saved;
-    if (saved) {
-      try { const res = await authService.getMe(); return res.data.user; }
-      catch { clearUser(); return rejectWithValue(null); }
-    }
+    const saved = localStorage.getItem('auth_user');
+    const parsed = saved ? JSON.parse(saved) : null;
+    if (parsed?.isGuest) return parsed;
+    const token = localStorage.getItem('auth_token');
+    if (!token) return rejectWithValue(null);
     const res = await authService.getMe();
     return res.data.user;
-  } catch { return rejectWithValue(null); }
+  } catch {
+    clearAuth();
+    return rejectWithValue(null);
+  }
 });
 
 export const logoutUser = createAsyncThunk('auth/logout', async (_, { getState }) => {
-  clearUser();
+  clearAuth();
   const { auth } = getState();
   if (auth.user?.isGuest) return;
-  await authService.logout();
+  try { await authService.logout(); } catch {}
 });
 
 const authSlice = createSlice({

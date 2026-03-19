@@ -13,11 +13,10 @@ export default function HomePage() {
   const { user } = useSelector((s) => s.auth);
   const { fetchTasks } = useTasks();
 
-  useEffect(() => {
-    // ✅ Guest ke liye API call mat karo
-    if (user?.isGuest) return;
-    fetchTasks({ limit: 100 });
-  }, [user]);
+ useEffect(() => {
+  if (!user || user?.isGuest) return;  // ✅ null aur guest dono skip
+  fetchTasks({ limit: 500 });
+}, [user]);
 
   return (
     <ProtectedRoute>

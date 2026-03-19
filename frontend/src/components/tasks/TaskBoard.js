@@ -22,11 +22,13 @@ const PRIORITY_FILTERS = [
 export default function TaskBoard() {
   const dispatch = useDispatch();
   const { filterStatus, filterPriority, searchQuery } = useSelector((s) => s.ui);
+  const { user } = useSelector((s) => s.auth); // ✅ added
   const { tasks, loading, fetchTasks } = useTasks();
 
   useEffect(() => {
-    fetchTasks({ limit: 100 });
-  }, []);
+    if (!user || user?.isGuest) return; // ✅ guest skip
+    fetchTasks({ limit: 500 });
+  }, [user]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
@@ -89,7 +91,6 @@ export default function TaskBoard() {
                 className={`flex flex-col rounded-2xl border ${col.border} ${col.glow}
                   bg-white/[0.015] min-h-[200px]`}
               >
-                {/* Column header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
                   <div className="flex items-center gap-2">
                     <span className={`text-base ${col.color}`}>{col.icon}</span>
@@ -101,7 +102,6 @@ export default function TaskBoard() {
                   </span>
                 </div>
 
-                {/* Tasks */}
                 <div className="flex-1 p-3 space-y-2.5 overflow-y-auto">
                   <AnimatePresence mode="popLayout">
                     {colTasks.length === 0 ? (

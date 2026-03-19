@@ -46,8 +46,9 @@ app.use(
       const allowedOrigins = [
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost:3002",
         "https://task-management-pied-ten.vercel.app",
-        // "https://task-management-git-main-mrsimens72-6377s-projects.vercel.app",
+        "https://task-management-git-main-mrsimens72-6377s-projects.vercel.app",
         process.env.CLIENT_URL,
       ].filter(Boolean);
 
@@ -58,7 +59,7 @@ app.use(
       }
     },
     credentials: true,
-  }),
+  })
 );
 
 app.use(express.json({ limit: "10kb" }));
